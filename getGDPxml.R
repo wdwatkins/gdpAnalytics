@@ -7,7 +7,22 @@ names(xmlDF) <- c("requestLink", "alg_ver", "start", "end", "data_uri",
 library(geoknife)
 for(i in 1:nrow(jobsDF)) {
   link <- jobsDF$requestLink[i]
-  job <- geojob(link)
+  
+  #some failed jobs don't have XML
+  if(jobsDF$status[i] == "FAILED") {
+    job <- tryCatch({
+      geojob(link)
+    }, error = function(err) {
+      err
+    })
+  } else {
+    job <- geojob(link)
+  }
+  if(inherits(job, "error")){
+    message("Failed job and geojob() failed - skipping this one")
+    next
+  }
+    
   wd <- tryCatch({webdata(job)
   }, error = function(err) {
     message("error in creating webdata, returning NAs for all fields")
@@ -25,3 +40,5 @@ for(i in 1:nrow(jobsDF)) {
     print(paste("Finished ", i))
   }
 }
+
+write.csv(xmlDF, file = 'GDP_XML_3_27.csv', row.names = FALSE)
