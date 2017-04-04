@@ -1,33 +1,7 @@
-retryJSON <- function(..., retries=3){
-  
-  safeWQP = function(...){
-    result = tryCatch({
-      read_json(...)
-    }, error = function(e) {
-      if(e$message == 'Operation was aborted by an application callback'){
-        stop(e)
-      }
-      return(NULL)
-    })
-    return(result)
-  }
-  retry = 1
-  while (retry < retries){
-    result = safeWQP(...)
-    if (!is.null(result)){
-      retry = retries
-    } else {
-      message('query failed, retrying')
-      retry = retry+1
-    }
-  }
-  return(result)
-}
-
-
 #grab gdp json from dashboard 
 library(jsonlite)
 library(dplyr)
+source('helperFunctions.R')
 
 pageEmpty <- FALSE
 i = 1

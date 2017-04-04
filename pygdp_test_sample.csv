@@ -1,0 +1,6 @@
+"identifier","start","end","data_uri","variable_names","shortAgentName"
+"FeatureWeightedGridStatisticsAlgorithm","1900-01-01","1900-03-01","dods://cida.usgs.gov/thredds/dodsC/prism","ppt:tmx","python"
+"FeatureWeightedGridStatisticsAlgorithm","1900-01-01","1900-03-01","dods://cida.usgs.gov/thredds/dodsC/prism","ppt:tmx","python"
+"FeatureGridStatisticsAlgorithm","1900-01-01","1900-03-01","dods://cida.usgs.gov/thredds/dodsC/prism","ppt","python"
+"FeatureWeightedGridStatisticsAlgorithm","1900-01-01","1900-03-01","dods://cida.usgs.gov/thredds/dodsC/prism","ppt","python"
+"FeatureCoverageOPeNDAPIntersectionAlgorithm","1950-01-01","1950-01-02","dods://cida.usgs.gov/thredds/dodsC/gmo/GMO_w_meta.ncml","Prcp","python"
