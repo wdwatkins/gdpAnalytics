@@ -54,8 +54,7 @@ plot(successAgentJobs_grpcum$creationDate ,
 legend("topleft", legend = c("geoknife", "python", "UI", "other"), 
        col = c("darkgoldenrod1", "aquamarine", "mediumorchid", "gray48"), pch = 16)
 
-#time series single data set
-
+#loop through uris, do a test call, find the temporal resolution
 
 
 

@@ -27,14 +27,21 @@ retryJSON <- function(..., retries=3){
 library(dplyr)
 library(lubridate)
 plotSetsInList <- function(df, sets) {
-  plotList <- list()
-  for(s in na.omit(sets)) {
-    filteredSet <- filter(df, data_uri == s) %>% arrange(creationDate) %>% 
+  sets <- na.omit(sets)
+  plotMat <- matrix(data = 1:12, nrow = 3, ncol = 2, byrow = TRUE)
+  
+  for(i in 1:length(sets)) {
+    if(i %in% c(seq(1,25, by = 6))){
+      layout(plotMat)
+    }
+    filteredSet <- filter(df, data_uri == sets[i]) %>% arrange(creationDate) %>% 
       mutate(count = 1, sumCount = cumsum(count))
     xmin = as.Date("2015-08-05")
     xmax = as.Date("2017-04-01")
-    plot(x = filteredSet$creationDate, y = filteredSet$sumCount, main = s, xlim = c(xmin, xmax), col = "blue",
-         xlab = "Date (August 2015 - Present)", ylab = "Count of successful jobs")
+    plot(x = filteredSet$creationDate, y = filteredSet$sumCount, 
+         main = filteredSet$dataSet[1], 
+         xlim = c(xmin, xmax), col = "blue",
+         xlab = "Date (August 2015 - Present)", ylab = "Job Count")
   }
 }
 

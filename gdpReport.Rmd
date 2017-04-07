@@ -38,21 +38,21 @@ successJobsNoTests <- removePyGDPtest(successJobs)
 
 ### Most-Accessed Datasets
 Excluding pyGDP tests, data sets with at least 100 successful jobs
-```{r echo=FALSE}
+```{r echo=FALSE, warning=FALSE}
+lastDay <- date(max(as.POSIXct(jobsDF$creationTime)))
 successGrp <- group_by(successJobsNoTests, data_uri)
 summary <- summarise(successGrp, n = n()) %>% 
   arrange(desc(n)) %>% mutate(dataSet = sub(".*dodsC/", "", data_uri))
 
-gt100 <- filter(summary, n > 100)
+gt100 <- filter(summary, n > 100, !is.na(dataSet)) %>% arrange(desc(n))
+gt100$dataSet <- factor(gt100$dataSet, levels = rev(gt100$dataSet)) #ggplot will reorder w/o factors
 
 p<-ggplot(data=gt100, aes(x=dataSet, y=n)) + geom_bar(stat="identity") +
-  coord_flip() + ylab("Sucessful Jobs")
+  coord_flip() + ylab("Sucessful Jobs") + labs(title = paste("GDP Jobs by dataset\n through", lastDay))
 p
 ```
 
 ### GDP User Agents
-Since August 2016
-
 ```{r echo=FALSE, message=FALSE}
 #add simple user agent name
 successAgentJobs <- agentJobs %>% filter(status == "SUCCEEDED") %>% 
@@ -65,7 +65,7 @@ successAgentJobs_grpcum <- successAgentJobs %>% group_by(shortAgentName) %>% mut
 successAgentJobs_grpcum <- removePyGDPtest(successAgentJobs_grpcum)
 plot(successAgentJobs_grpcum$creationDate , 
      successAgentJobs_grpcum$agentCountCum, col = successAgentJobs_grpcum$color, 
-     xlab = "Date (2016-2017)", ylab = "Job Count", main = "GDP User Agents", 
+     xlab = "Date (2016-2017)", ylab = "Job Count", main = paste("GDP User Agents, August 2016 through", lastDay), 
      pch = 16)
 legend("topleft", legend = c("geoknife", "python", "UI", "other"), 
        col = c("darkgoldenrod1", "aquamarine", "mediumorchid", "gray48"), pch = 16)
@@ -74,6 +74,7 @@ legend("topleft", legend = c("geoknife", "python", "UI", "other"),
 ### Time series plots for Datasets
 Again, data sets with at least 100 successful jobs
 ```{r echo = FALSE, message=FALSE}
+successJobsNoTests <- mutate(successJobsNoTests, dataSet = sub(".*dodsC/", "", data_uri))
 plotSetsInList(successJobsNoTests, gt100$data_uri)
 ```
 
