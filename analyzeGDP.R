@@ -54,7 +54,28 @@ plot(successAgentJobs_grpcum$creationDate ,
 legend("topleft", legend = c("geoknife", "python", "UI", "other"), 
        col = c("darkgoldenrod1", "aquamarine", "mediumorchid", "gray48"), pch = 16)
 
-#loop through uris, do a test call, find the temporal resolution
+#calculate number of time steps per call
+#don't have info for 2 datasets
+resDF <- read.csv('gt100.txt', sep = "\t", stringsAsFactors = FALSE)
+
+resDF <- filter(resDF, !is.na(res_num)) %>% rowwise() %>% mutate(dur = duration(res_num, units = res_unit))
+successJobs_gt100 <- filter(successJobsNoTests, data_uri %in% resDF$data_uri)
+successJobs_gt100 <- left_join(successJobs_gt100, resDF, by = "data_uri") %>% 
+                      mutate(start = as.Date(start), end = as.Date(end))
+successJobs_nsteps <- successJobs_gt100 %>% mutate(nsteps = round((end - start)/dur))
+#deal with hourly data sets with only one day
+#this is technically censored data...
+successJobs_nsteps <- rowwise(successJobs_nsteps) %>% mutate(nsteps = ifelse(test = grepl("hour", res_unit) && end - start == 0 && nsteps == 0, 
+                                             yes = 12,
+                                             no = nsteps)) %>% filter(nsteps > 0)
+#there are a few jobs with weird end dates "0203-12-31" that cause negative nsteps
+
+stepsSummary <- group_by(successJobs_nsteps, dataSet) %>% summarize(n= n(), totalSteps = sum(nsteps), 
+                                                                    meanSteps = totalSteps/n)
+
+
+
+
 
 
 
