@@ -1,7 +1,7 @@
 ---
 title: "GDP Analytics Report"
 author: "David Watkins"
-date: "March 31, 2017"
+date: "April 28th, 2017"
 output: html_document
 ---
 
@@ -10,49 +10,87 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(ggplot2)
 library(lubridate)
-source('helperFunctions.R')
+library(gridExtra)
+source('scripts/helperFunctions.R')
 
 #load DFs, join
-jobsDF <- read.csv('uniqueDF_3_27.csv', stringsAsFactors = FALSE,
+jobsDF <- read.csv('data/uniqueDF_4_21.csv', stringsAsFactors = FALSE,
                    colClasses = "character")
-xmlDF <- read.csv('GDP_XML_3_27.csv', stringsAsFactors = FALSE, 
+xmlDF <- read.csv('data/GDP_XML_4_21.csv', stringsAsFactors = FALSE, 
                   colClasses = c(rep("character", 6), "numeric"))
 
-joinedDF_noAgent <- left_join(jobsDF, xmlDF, by = "requestLink") 
+joinedDF_all <- left_join(jobsDF, xmlDF, by = "requestLink") %>%              mutate(dataSet = sub(".*dodsC/", "", data_uri), 
+         hosting = ifelse(grepl(x = data_uri, pattern = "cida"),
+                       yes = 'EROS', no = "other"))
+joinedDF_unique <- joinedDF_all %>% filter(!duplicated(md5)) #unique jobs!
 
-userAgents <- read.csv('useragents.csv', stringsAsFactors = FALSE, 
+userAgents <- read.csv('data/userAgents_4_26.csv', stringsAsFactors = FALSE, 
                        colClasses = "character", 
-                       col.names = c("ignore_id", "requestId", "agent"))
-agentJobs <- left_join(joinedDF_noAgent, userAgents, by = "requestId")
+                       col.names = c("requestId", "agent"))
+agentJobs <- left_join(joinedDF_unique, userAgents, by = "requestId")
 
 agentJobs <- filter(agentJobs, !is.na(agent))
 
 #failed vs successful jobs
 #most popular datasets
-successJobs <- filter(joinedDF_noAgent, status == "SUCCEEDED") %>% 
+successJobs_unique <- filter(joinedDF_unique, status == "SUCCEEDED") %>% 
   mutate(creationDate = date(creationTime))
 
-successJobsNoTests <- removePyGDPtest(successJobs)
+#calculate number of time steps per call
+#don't have info for 2 datasets
+resDF <- read.csv('data/gt100.txt', sep = "\t", stringsAsFactors = FALSE) %>% select(-dataSet)
+#need to add hours for 00:00:00 dates
+resDF <- filter(resDF, !is.na(res_num)) %>% rowwise() %>% mutate(dur = duration(res_num, units = res_unit))
+successJobs_gt100 <- filter(successJobs_unique, data_uri %in% resDF$data_uri) %>% rowwise() %>% 
+                      mutate(end = ifelse(nchar(end) == 10, paste(end, "00:00:00"), end),
+                             start = ifelse(nchar(start) == 10, paste(start, "00:00:00"), start))
+successJobs_gt100 <- left_join(successJobs_gt100, resDF, by = "data_uri") %>% 
+                      filter(nchar(end) > 0) %>% 
+                      mutate(start = as.POSIXct(start), end = as.POSIXct(end))
+#time bounds are inclusive!
+successJobs_nsteps <- successJobs_gt100 %>% mutate(nsteps = round((end - start)/dur) + 1) %>% 
+                        filter(nsteps > 0)
+
 
 ```
 
-### Most-Accessed Datasets
-Excluding pyGDP tests, data sets with at least 100 successful jobs
+#### A note on how this data was processed
+All the data shown here is reduced to unique jobs, i.e. some aspect of the time bounds, shapefile, variables, or web processing algorithm is different.  This eliminates jobs that have been run repeatedly for testing, either internally or by actual users testing their code.  With the lack of unique user data in the existing logs, this should give us the best picture of actual client users and data set consumption for the purpose of measuring value.  However, for answering questions about throughput or other hardware resources, the raw total number of jobs may be more appropriate.   
+
+### Most-utilized datasets
+##### With at least 100 successful unique jobs
 ```{r echo=FALSE, warning=FALSE}
-lastDay <- date(max(as.POSIXct(jobsDF$creationTime)))
-successGrp <- group_by(successJobsNoTests, data_uri)
+lastDay <- date(max(as.POSIXct(successJobs_unique$creationTime)))
+successGrp <- group_by(successJobs_unique, data_uri)
 summary <- summarise(successGrp, n = n()) %>% 
-  arrange(desc(n)) %>% mutate(dataSet = sub(".*dodsC/", "", data_uri))
+  arrange(desc(n)) 
 
-gt100 <- filter(summary, n > 100, !is.na(dataSet)) %>% arrange(desc(n))
-gt100$dataSet <- factor(gt100$dataSet, levels = rev(gt100$dataSet)) #ggplot will reorder w/o factors
+stepsSummary <- group_by(successJobs_nsteps, dataSet, hosting) %>% 
+  summarize(n= n(), totalSteps = sum(nsteps),
+  meanSteps = totalSteps/n) %>% filter(n > 100)
 
-p<-ggplot(data=gt100, aes(x=dataSet, y=n)) + geom_bar(stat="identity") +
-  coord_flip() + ylab("Sucessful Jobs") + labs(title = paste("GDP Jobs by dataset\n through", lastDay))
-p
+p<-ggplot(data=stepsSummary, aes(x=reorder(dataSet, n), y=n, fill = hosting)) + geom_bar(stat="identity") +
+  coord_flip() + ylab("Unique, \nSucessful Jobs") + xlab("Data set") + theme(legend.position = c(0.5,0.3), text= element_text(size = 10)) + scale_fill_manual(values = c("chartreuse", "darkgray"))
+p2<-ggplot(data=stepsSummary, aes(x=reorder(dataSet, n), y=totalSteps, fill = hosting)) + geom_bar(stat="identity") +
+  coord_flip() + ylab("Total time steps\n requested") + xlab(NULL) + theme(
+axis.text.y = element_blank(), legend.position = "none", text = element_text(size = 10)) + scale_fill_manual(values = c("chartreuse", "darkgray"), guide = FALSE)
+grid.arrange(arrangeGrob(p, p2, ncol = 2, widths= c(6,2)))
 ```
+*Figure 1*
+
+Without information regarding the actual spatial extent of the data 'cube' requested, or unique users (both currently being implemented), the two obvious metrics for measuring data set value are number of (unique) successful jobs, and the number of timesteps requested in them. Exluding the NASA NLDAS dataset, these variables are well-correlated (0.84).  
+
+### Individual dataset usage patterns
+Here the datasets from Figure 1 are shown as timeseries of unique successful jobs.  Not that for some datasets, the majority of jobs are concentrated in short periods of time, sometimes on individual days, suggesting they all originated from the same user in a large chunked or parallelized workflow.  
+```{r echo = FALSE, message=FALSE}
+successJobs_unique <- mutate(successJobs_unique, dataSet = sub(".*dodsC/", "", data_uri))
+stepsSummary <- arrange(stepsSummary, desc(n)) %>% filter(n > 100) 
+plotSetsInList(successJobs_unique, stepsSummary$dataSet)
+```
+*Figure 2*
 
 ### GDP User Agents
+Here there are again large spikes in job numbers on particular days, suggesting certain power users account for a large of number of jobs, particularly with geoknife.  It should be noted here that the method used to remove tests affects the relative job counts of the UI and pyGDP substantially - filtering a set of pyGDP tests out manually suggested there were no pyGDP jobs at all from in 2017 until after March, and UI numbers were substantially higher.  Geoknife has the highest job count regardless.  
 ```{r echo=FALSE, message=FALSE}
 #add simple user agent name
 successAgentJobs <- agentJobs %>% filter(status == "SUCCEEDED") %>% 
@@ -62,19 +100,12 @@ successAgentJobs$agentCount <- 1
 successAgentJobs_grpcum <- successAgentJobs %>% group_by(shortAgentName) %>% mutate(agentCountCum = cumsum(agentCount)) 
 
 #remove pyGDP tests
-successAgentJobs_grpcum <- removePyGDPtest(successAgentJobs_grpcum)
 plot(successAgentJobs_grpcum$creationDate , 
      successAgentJobs_grpcum$agentCountCum, col = successAgentJobs_grpcum$color, 
-     xlab = "Date (2016-2017)", ylab = "Job Count", main = paste("GDP User Agents, August 2016 through", lastDay), 
+     xlab = "Date (2016-2017)", ylab = " Unique Job Count", main = paste("GDP User Agents, August 2016 through", lastDay), 
      pch = 16)
 legend("topleft", legend = c("geoknife", "python", "UI", "other"), 
        col = c("darkgoldenrod1", "aquamarine", "mediumorchid", "gray48"), pch = 16)
 ```
-
-### Time series plots for Datasets
-Again, data sets with at least 100 successful jobs
-```{r echo = FALSE, message=FALSE}
-successJobsNoTests <- mutate(successJobsNoTests, dataSet = sub(".*dodsC/", "", data_uri))
-plotSetsInList(successJobsNoTests, gt100$data_uri)
-```
+*Figure 3*
 

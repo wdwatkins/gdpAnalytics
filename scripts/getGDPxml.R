@@ -1,11 +1,16 @@
 #read in jobs df (from JSON)
-jobsDF <- read.csv('uniqueDF_3_27.csv', stringsAsFactors = FALSE,
+library(data.table)
+library(digest)
+inFile <- 'uniqueDF_4_21.csv'
+outFile <- 'GDP_XML_4_21.csv'
+
+jobsDF <- fread(inFile, stringsAsFactors = FALSE,
                    colClasses = "character")
-xmlDF <- data.frame(matrix(nrow = nrow(jobsDF), ncol = 7)) #preallocate
+xmlDF <- data.frame(matrix(nrow = nrow(jobsDF), ncol = 8)) #preallocate
 names(xmlDF) <- c("requestLink", "alg_ver", "start", "end", "data_uri", 
-                  "variable_names", "nvars")
+                  "variable_names", "nvars", "md5")
 library(geoknife)
-for(i in 1:nrow(jobsDF)) {
+for(i in 36900:nrow(jobsDF)) {
   link <- jobsDF$requestLink[i]
   
   #some failed jobs don't have XML
@@ -33,7 +38,7 @@ for(i in 1:nrow(jobsDF)) {
   
   linkDF <- data.frame(link, job@algorithm.version, wdTimes[1], wdTimes[2],
                        url(wd), paste(wdVars, collapse = ":"), length(wdVars),
-                       stringsAsFactors = FALSE)
+                       digest(xml(job)), stringsAsFactors = FALSE)
   
   xmlDF[i,] <- linkDF
   if(i %% 100 == 0) {
@@ -41,4 +46,4 @@ for(i in 1:nrow(jobsDF)) {
   }
 }
 
-write.csv(xmlDF, file = 'GDP_XML_3_27.csv', row.names = FALSE)
+fwrite(xmlDF, file = outFile, quote = TRUE)

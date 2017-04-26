@@ -34,7 +34,7 @@ plotSetsInList <- function(df, sets) {
     if(i %in% c(seq(1,25, by = 6))){
       layout(plotMat)
     }
-    filteredSet <- filter(df, data_uri == sets[i]) %>% arrange(creationDate) %>% 
+    filteredSet <- filter(df, dataSet == sets[i]) %>% arrange(creationDate) %>% 
       mutate(count = 1, sumCount = cumsum(count))
     xmin = as.Date("2015-08-05")
     xmax = as.Date("2017-04-01")
@@ -97,6 +97,15 @@ removePyGDPtest <- function(df) {
   return(retDF)
 }
 
+removeGMOtest <- function(df) {
+  df_remove <- df %>% filter(grepl(x = data_uri, pattern = "gmo/GMO_w_meta.ncml") &
+                           start == "1950-01-01" & end == "1950-01-02" &
+                           variable_names == "Prcp" & 
+                            identifier == "FeatureCoverageOPeNDAPIntersectionAlgorithm")
+  df_filt <- anti_join(df, df_remove)
+  return(df_filt)
+}
+
 
 parseGDPElapsed <- function(vec) {
   #order of these is important!
@@ -105,4 +114,7 @@ parseGDPElapsed <- function(vec) {
   return(vec <- duration(vec))
 }
   
-
+getUniqueJobsSummary <- function(df) {
+  summ <- group_by(df, data_uri) %>% summarize(unique = length(unique(md5)), total = n())
+  return(summ)
+}

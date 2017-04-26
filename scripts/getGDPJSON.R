@@ -1,6 +1,7 @@
 #grab gdp json from dashboard 
 library(jsonlite)
 library(dplyr)
+library(data.table)
 source('helperFunctions.R')
 
 pageEmpty <- FALSE
@@ -20,4 +21,4 @@ while(!pageEmpty) {
 }
 
 uniqueDF <- unique(allDF) #if requests are submitted during d/l, will cause duplicates
-write.csv(uniqueDF, row.names = FALSE, quote = TRUE, file = "uniqueDF_3_27.csv")
+fwrite(uniqueDF, quote = TRUE, file = "uniqueDF_4_21.csv")
