@@ -38,9 +38,12 @@ plotSetsInList <- function(df, sets) {
       mutate(count = 1, sumCount = cumsum(count))
     xmin = as.Date("2015-08-05")
     xmax = as.Date("2017-04-01")
+    if(filteredSet$hosting[1] == "EROS") {
+      col = "dodgerblue"
+    } else { col = "darkgray"}
     plot(x = filteredSet$creationDate, y = filteredSet$sumCount, 
          main = filteredSet$dataSet[1], 
-         xlim = c(xmin, xmax), col = "blue",
+         xlim = c(xmin, xmax), col = col,
          xlab = "Date (August 2015 - Present)", ylab = "Job Count")
   }
 }

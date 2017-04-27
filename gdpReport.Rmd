@@ -70,10 +70,10 @@ stepsSummary <- group_by(successJobs_nsteps, dataSet, hosting) %>%
   meanSteps = totalSteps/n) %>% filter(n > 100)
 
 p<-ggplot(data=stepsSummary, aes(x=reorder(dataSet, n), y=n, fill = hosting)) + geom_bar(stat="identity") +
-  coord_flip() + ylab("Unique, \nSucessful Jobs") + xlab("Data set") + theme(legend.position = c(0.5,0.3), text= element_text(size = 10)) + scale_fill_manual(values = c("chartreuse", "darkgray"))
+  coord_flip() + ylab("Unique, \nSucessful Jobs") + xlab("Data set") + theme(legend.position = c(0.5,0.3), text= element_text(size = 10)) + scale_fill_manual(values = c("dodgerblue", "darkgray"))
 p2<-ggplot(data=stepsSummary, aes(x=reorder(dataSet, n), y=totalSteps, fill = hosting)) + geom_bar(stat="identity") +
   coord_flip() + ylab("Total time steps\n requested") + xlab(NULL) + theme(
-axis.text.y = element_blank(), legend.position = "none", text = element_text(size = 10)) + scale_fill_manual(values = c("chartreuse", "darkgray"), guide = FALSE)
+axis.text.y = element_blank(), legend.position = "none", text = element_text(size = 10)) + scale_fill_manual(values = c("dodgerblue", "darkgray"), guide = FALSE)
 grid.arrange(arrangeGrob(p, p2, ncol = 2, widths= c(6,2)))
 ```
 *Figure 1*
