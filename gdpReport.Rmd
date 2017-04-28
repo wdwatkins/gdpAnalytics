@@ -59,7 +59,7 @@ All the data shown here is reduced to unique jobs, i.e. some aspect of the time 
 
 ### Most-utilized datasets
 ##### With at least 100 successful unique jobs
-```{r echo=FALSE, warning=FALSE}
+```{r echo=FALSE, warning=FALSE, fig.width=6.5, fig.height=.7}
 lastDay <- date(max(as.POSIXct(successJobs_unique$creationTime)))
 successGrp <- group_by(successJobs_unique, data_uri)
 summary <- summarise(successGrp, n = n()) %>% 
@@ -69,9 +69,17 @@ stepsSummary <- group_by(successJobs_nsteps, dataSet, hosting) %>%
   summarize(n= n(), totalSteps = sum(nsteps),
   meanSteps = totalSteps/n) %>% filter(n > 100)
 
-p<-ggplot(data=stepsSummary, aes(x=reorder(dataSet, n), y=n, fill = hosting)) + geom_bar(stat="identity") +
-  coord_flip() + ylab("Unique, \nSucessful Jobs") + xlab("Data set") + theme(legend.position = c(0.5,0.3), text= element_text(size = 10)) + scale_fill_manual(values = c("dodgerblue", "darkgray"))
-p2<-ggplot(data=stepsSummary, aes(x=reorder(dataSet, n), y=totalSteps, fill = hosting)) + geom_bar(stat="identity") +
+#separate nasa nldas plot
+gt5k <- filter(stepsSummary, n > 5000)
+lt5k <- filter(stepsSummary, n < 5000)
+p5k<-ggplot(data=gt5k, aes(x=reorder(dataSet, n), y=n, fill = hosting)) + geom_bar(stat="identity") +
+  coord_flip() + xlab(NULL) + ylab("Unique, successful jobs") + theme(legend.position = "none", text= element_text(size = 10)) + scale_fill_manual(values = c("darkgray"))
+p5k
+```
+```{r echo=FALSE, warning=FALSE}
+p<-ggplot(data=lt5k, aes(x=reorder(dataSet, n), y=n, fill = hosting)) + geom_bar(stat="identity") +
+  coord_flip() + ylab("Unique, \nsucessful jobs") + xlab("Data set") + theme(legend.position = c(0.5,0.3), text= element_text(size = 10)) + scale_fill_manual(values = c("dodgerblue", "darkgray"))
+p2<-ggplot(data=lt5k, aes(x=reorder(dataSet, n), y=totalSteps, fill = hosting)) + geom_bar(stat="identity") +
   coord_flip() + ylab("Total time steps\n requested") + xlab(NULL) + theme(
 axis.text.y = element_blank(), legend.position = "none", text = element_text(size = 10)) + scale_fill_manual(values = c("dodgerblue", "darkgray"), guide = FALSE)
 grid.arrange(arrangeGrob(p, p2, ncol = 2, widths= c(6,2)))
@@ -99,7 +107,7 @@ successAgentJobs <- shortAgentName(successAgentJobs)
 successAgentJobs$agentCount <- 1
 successAgentJobs_grpcum <- successAgentJobs %>% group_by(shortAgentName) %>% mutate(agentCountCum = cumsum(agentCount)) 
 
-#remove pyGDP tests
+
 plot(successAgentJobs_grpcum$creationDate , 
      successAgentJobs_grpcum$agentCountCum, col = successAgentJobs_grpcum$color, 
      xlab = "Date (2016-2017)", ylab = " Unique Job Count", main = paste("GDP User Agents, August 2016 through", lastDay), 
