@@ -74,7 +74,7 @@ gt5k <- filter(stepsSummary, n > 5000)
 lt5k <- filter(stepsSummary, n < 5000)
 p5k<-ggplot(data=gt5k, aes(x=reorder(dataSet, n), y=n, fill = hosting)) + geom_bar(stat="identity") +
   coord_flip() + xlab(NULL) + ylab("Unique, successful jobs") + theme(legend.position = "none", text= element_text(size = 10)) + scale_fill_manual(values = c("darkgray"))
-p5k
+#p5k
 ```
 ```{r echo=FALSE, warning=FALSE}
 p<-ggplot(data=lt5k, aes(x=reorder(dataSet, n), y=n, fill = hosting)) + geom_bar(stat="identity") +
@@ -86,7 +86,7 @@ grid.arrange(arrangeGrob(p, p2, ncol = 2, widths= c(6,2)))
 ```
 *Figure 1*
 
-Without information regarding the actual spatial extent of the data 'cube' requested, or unique users (both currently being implemented), the two obvious metrics for measuring data set value are number of (unique) successful jobs, and the number of timesteps requested in them. Exluding the NASA NLDAS dataset, these variables are well-correlated (0.84).  
+Without information regarding the actual spatial extent of the data 'cube' requested, or unique users (both currently being implemented), the two obvious metrics for measuring data set value are number of (unique) successful jobs, and the number of timesteps requested in them. Exluding the NASA NLDAS dataset (not shown, it is well off scale), these variables are well-correlated (0.84).  
 
 ### Individual dataset usage patterns
 Here the datasets from Figure 1 are shown as timeseries of unique successful jobs.  Not that for some datasets, the majority of jobs are concentrated in short periods of time, sometimes on individual days, suggesting they all originated from the same user in a large chunked or parallelized workflow.  
@@ -112,8 +112,8 @@ plot(successAgentJobs_grpcum$creationDate ,
      successAgentJobs_grpcum$agentCountCum, col = successAgentJobs_grpcum$color, 
      xlab = "Date (2016-2017)", ylab = " Unique Job Count", main = paste("GDP User Agents, August 2016 through", lastDay), 
      pch = 16)
-legend("topleft", legend = c("geoknife", "python", "UI", "other"), 
-       col = c("darkgoldenrod1", "aquamarine", "mediumorchid", "gray48"), pch = 16)
+legend("topleft", legend = c("geoknife", "python", "UI"), 
+       col = c("darkgoldenrod1", "aquamarine", "mediumorchid"), pch = 16)
 ```
 *Figure 3*
 
