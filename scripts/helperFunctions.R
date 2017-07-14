@@ -72,7 +72,7 @@ library(dplyr)
 #remove pyGDP tests, based on an example
 #assuming all tests are adjacent
 removePyGDPtest <- function(df) {
-  pyTest <- read.csv('pygdp_test_sample.csv', colClasses = "character")
+  pyTest <- read.csv('data/pygdp_test_sample.csv', colClasses = "character")
   toDrop <- data.frame()
   
   if("shortAgentName" %in% names(df)){

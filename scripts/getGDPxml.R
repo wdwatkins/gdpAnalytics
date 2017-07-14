@@ -1,8 +1,8 @@
 #read in jobs df (from JSON)
 library(data.table)
 library(digest)
-inFile <- 'uniqueDF_4_21.csv'
-outFile <- 'GDP_XML_4_21.csv'
+inFile <- 'data/uniqueDF_newStats_7_11.csv'
+outFile <- 'data/GDP_XML_7_11_newStatsOnly.csv'
 
 jobsDF <- fread(inFile, stringsAsFactors = FALSE,
                    colClasses = "character")
@@ -10,9 +10,14 @@ xmlDF <- data.frame(matrix(nrow = nrow(jobsDF), ncol = 8)) #preallocate
 names(xmlDF) <- c("requestLink", "alg_ver", "start", "end", "data_uri", 
                   "variable_names", "nvars", "md5")
 library(geoknife)
-for(i in 36900:nrow(jobsDF)) {
+for(i in 1:nrow(jobsDF)) {
   link <- jobsDF$requestLink[i]
   
+  if(i == 56 && i == 57) {
+    print("Skipping 56")
+    next
+  }
+  print("starting")
   #some failed jobs don't have XML
   if(jobsDF$status[i] == "FAILED") {
     job <- tryCatch({
@@ -41,6 +46,7 @@ for(i in 36900:nrow(jobsDF)) {
                        digest(xml(job)), stringsAsFactors = FALSE)
   
   xmlDF[i,] <- linkDF
+  print(i)
   if(i %% 100 == 0) {
     print(paste("Finished ", i))
   }
