@@ -1,25 +1,30 @@
 #read in jobs df (from JSON)
 library(data.table)
 library(digest)
-inFile <- 'data/uniqueDF_newStats_7_11.csv'
-outFile <- 'data/GDP_XML_7_11_newStatsOnly.csv'
-
-jobsDF <- fread(inFile, stringsAsFactors = FALSE,
+library(assertthat)
+xmlPath <- 'canonicalData/xml.csv'
+jsonFile <- 'canonicalData/uniqueDF_json.csv'
+existingXML <- fread(xmlPath)
+existingXML <- mutate(existingXML, requestId = sub(".*=", "", requestLink))
+jobsDF <- fread(jsonFile, stringsAsFactors = FALSE,
                    colClasses = "character")
-xmlDF <- data.frame(matrix(nrow = nrow(jobsDF), ncol = 8)) #preallocate
+
+#check which Ids are in JSON and not xml
+links_download <- jobsDF$requestLink[!jobsDF$requestId %in% existingXML$requestId] 
+assert_that(length(links_download) == (nrow(jobsDF) - nrow(existingXML)))
+
+xmlDF <- data.frame(matrix(nrow = length(links_download), ncol = 8)) #preallocate
 names(xmlDF) <- c("requestLink", "alg_ver", "start", "end", "data_uri", 
                   "variable_names", "nvars", "md5")
+jobs_subset <- filter(jobsDF, requestLink %in% links_download)
+message(paste(length(links_download), "new jobs to download"))
 library(geoknife)
-for(i in 1:nrow(jobsDF)) {
-  link <- jobsDF$requestLink[i]
+for(i in 1:length(links_download)) {
+  link <- links_download[i]
   
-  if(i == 56 && i == 57) {
-    print("Skipping 56")
-    next
-  }
   print("starting")
   #some failed jobs don't have XML
-  if(jobsDF$status[i] == "FAILED") {
+  if(jobs_subset$status[i] == "FAILED") {
     job <- tryCatch({
       geojob(link)
     }, error = function(err) {
@@ -52,4 +57,8 @@ for(i in 1:nrow(jobsDF)) {
   }
 }
 
-fwrite(xmlDF, file = outFile, quote = TRUE)
+#now bind to exisiting
+all_xml <- bind_rows(existingXML, xmlDF)
+assert_that(nrow(all_xml) == nrow(jobsDF))
+
+fwrite(all_xml, file = xmlPath, quote = TRUE)
