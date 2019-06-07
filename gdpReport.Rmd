@@ -11,15 +11,15 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 library(gridExtra)
-source('scripts/helperFunctions.R')
+source('R/helperFunctions.R')
 
 #load DFs, join
-jobsDF <- read.csv('data/uniqueDF_4_21.csv', stringsAsFactors = FALSE,
+jobsDF <- read.csv('canonicalData/uniqueDF_json.csv', stringsAsFactors = FALSE,
                    colClasses = "character")
-xmlDF <- read.csv('data/GDP_XML_4_21.csv', stringsAsFactors = FALSE, 
+xmlDF <- read.csv('canonicalData/xml.csv', stringsAsFactors = FALSE, 
                   colClasses = c(rep("character", 6), "numeric"))
 
-joinedDF_all <- left_join(jobsDF, xmlDF, by = "requestLink") %>%              mutate(dataSet = sub(".*dodsC/", "", data_uri), 
+joinedDF_all <- left_join(jobsDF, xmlDF, by = c("requestLink", "requestId")) %>%              mutate(dataSet = sub(".*dodsC/", "", data_uri), 
          hosting = ifelse(grepl(x = data_uri, pattern = "cida"),
                        yes = 'EROS', no = "other"))
 joinedDF_unique <- joinedDF_all %>% filter(!duplicated(md5)) #unique jobs!
@@ -93,7 +93,7 @@ Here the datasets from Figure 1 are shown as timeseries of unique successful job
 ```{r echo = FALSE, message=FALSE}
 successJobs_unique <- mutate(successJobs_unique, dataSet = sub(".*dodsC/", "", data_uri))
 stepsSummary <- arrange(stepsSummary, desc(n)) %>% filter(n > 100) 
-plotSetsInList(successJobs_unique, stepsSummary$dataSet)
+plotSetsInList_facet(successJobs_unique, stepsSummary$dataSet)
 ```
 *Figure 2*
 
@@ -110,7 +110,7 @@ successAgentJobs_grpcum <- successAgentJobs %>% group_by(shortAgentName) %>% mut
 
 plot(successAgentJobs_grpcum$creationDate , 
      successAgentJobs_grpcum$agentCountCum, col = successAgentJobs_grpcum$color, 
-     xlab = "Date (2016-2017)", ylab = " Unique Job Count", main = paste("GDP User Agents, August 2016 through", lastDay), 
+     xlab = "Date (2016-2017)", ylab = " Unique Job Count", main = paste("GDP User Agents, August 2016 through", max(successAgentJobs_grpcum$creationDate)), 
      pch = 16)
 legend("topleft", legend = c("geoknife", "python", "UI"), 
        col = c("darkgoldenrod1", "aquamarine", "mediumorchid"), pch = 16)

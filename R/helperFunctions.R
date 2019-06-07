@@ -36,18 +36,31 @@ plotSetsInList <- function(df, sets) {
     }
     filteredSet <- filter(df, dataSet == sets[i]) %>% arrange(creationDate) %>% 
       mutate(count = 1, sumCount = cumsum(count))
-    xmin = as.Date("2015-08-05")
-    xmax = as.Date("2017-04-01")
+    #xmin = as.Date("2015-08-05")
+    #xmax = as.Date("2017-04-01")
     if(filteredSet$hosting[1] == "EROS") {
       col = "dodgerblue"
     } else { col = "darkgray"}
     plot(x = filteredSet$creationDate, y = filteredSet$sumCount, 
          main = filteredSet$dataSet[1], 
-         xlim = c(xmin, xmax), col = col,
+         #xlim = c(xmin, xmax), col = col,
          xlab = "Date (August 2015 - Present)", ylab = "Job Count")
   }
 }
 
+plotSetsInList_facet <- function(df, sets) {
+  sets <- na.omit(sets)
+  df_filtered <- df %>% filter(dataSet %in% sets) %>% 
+    group_by(dataSet) %>% 
+    arrange(creationDate) %>% 
+    mutate(count = 1, sumCount = cumsum(count))
+  ggplot(df_filtered, aes(x = creationDate, y = sumCount, 
+                          col = hosting)) +
+    geom_line() + 
+    facet_wrap("dataSet") +
+    scale_color_manual(values = c("dodgerblue", "darkgray")) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
 
 plotAgentsCumulative <- function(df) {
   

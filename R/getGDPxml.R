@@ -2,6 +2,7 @@
 library(data.table)
 library(digest)
 library(assertthat)
+library(dplyr)
 xmlPath <- 'canonicalData/xml.csv'
 jsonFile <- 'canonicalData/uniqueDF_json.csv'
 existingXML <- fread(xmlPath)
@@ -57,6 +58,8 @@ for(i in 1:length(links_download)) {
   }
 }
 
+#if xml download/parsing hangs up
+xmlDF_na <- xmlDF %>% mutate(na_count = rowSums(is.na(select(., everything())))) %>% filter(na_count <8)
 #now bind to exisiting
 all_xml <- bind_rows(existingXML, xmlDF)
 assert_that(nrow(all_xml) == nrow(jobsDF))

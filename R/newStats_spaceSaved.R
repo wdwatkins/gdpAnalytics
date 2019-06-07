@@ -1,12 +1,18 @@
 library(dplyr)
 library(data.table)
+source('R/helperFunctions.R')
 
 #load two 7_3_newStatsOnly csvs
-jobsDF <- read.csv('data/uniqueDF_newStats_7_11.csv', stringsAsFactors = FALSE)
-xmlDF <- fread('data/GDP_XML_7_11_newStatsOnly.csv')
+jobsDF <- read.csv('canonicalData/uniqueDF_json.csv', stringsAsFactors = FALSE)
+xmlDF <- fread('canonicalData/xml.csv')
 
 allDF <- left_join(jobsDF, xmlDF, by = "requestLink")
-allDF_filtered <- removePyGDPtest(allDF)
+allDF_filtered_nopy <- removePyGDPtest(allDF) 
+allDF_filtered <- filter(allDF_filtered_nopy, creationTime > as.Date('2017-06-12') & 
+                           dataFetchInfo.fetchSize > outputInfo.returnSize &
+                           dataFetchInfo.fetchSize > 1 &
+                           outputInfo.returnSize > 1)
+                           #data_uri %in% popular_uris$data_uri)
 allDF_filtered_success <- filter(allDF_filtered, 
                                  status == "SUCCEEDED" & clientInfo.userHash != "") %>% 
   mutate(dataFetchInfo.fetchSize = as.numeric(dataFetchInfo.fetchSize),
@@ -29,3 +35,4 @@ bwSaved_total <- round(sum(allDF_filtered_success$bwSaved)/10^12)
 cat(paste(bwSaved_total, "total terabytes saved over the wire\n"))
 cat(paste(bwSaved_median, "median GB saved over the wire per job\n"))
 cat(paste(bwSaved_mean, "mean GB saved over the wire per job\n"))
+

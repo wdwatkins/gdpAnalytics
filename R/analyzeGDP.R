@@ -2,7 +2,7 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 library(data.table)
-source('helperFunctions.R')
+source('R/helperFunctions.R')
 
 #load DFs, join
 jobsDF <- fread('../data/uniqueDF_4_21.csv', stringsAsFactors = FALSE,

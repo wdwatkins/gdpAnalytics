@@ -3,7 +3,7 @@ library(jsonlite)
 library(dplyr)
 library(data.table)
 library(assertthat)
-source('scripts/helperFunctions.R')
+source('R/helperFunctions.R')
 
 existing <- fread('canonicalData/uniqueDF_json.csv', colClasses = "character")
 
